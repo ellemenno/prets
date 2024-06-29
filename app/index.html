@@ -1,0 +1,213 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+<title>prêts?</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="fencing timing trainer">
+<style>
+:root {
+  --clr-bg-ready: #232323;
+  --clr-bg-advance: #4bc10b;
+  --clr-bg-prep: #e9c316;
+  --clr-bg-retreat: #dc320f;
+  --clr-primary: #ddd;
+  --clr-btn-primary: #2590e1;
+  --clr-btn-active: #187dc9;
+}
+
+body { color: var(--clr-primary); margin: 0; overflow: hidden; padding: 0; }
+button {
+  background-color: var(--clr-btn-primary);
+  border-radius: 0.33em;
+  border: none;
+  cursor: pointer;
+  font-family: "Gill Sans", Verdana, sans-serif;
+  font-size: 5vw;
+  font-weight: bolder;
+  overflow: hidden;
+  padding: 0.3em 0.9em;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+button:hover,
+button:active {
+  background-color: var(--clr-btn-active);
+}
+h1 {
+  font-family: Georgia, serif;
+  font-size: 15vw;
+}
+
+.action { position: absolute; width: 100vw; z-index: -2; }
+.short { height: 50vh; margin-top: 25vh }
+.long { height: 100vh; }
+
+.ready { background-color: var(--clr-bg-ready); }
+.advance { background-color: var(--clr-bg-advance); }
+.prep { background-color: var(--clr-bg-prep); }
+.retreat { background-color: var(--clr-bg-retreat); }
+
+.centered {
+  align-items: center;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+}
+.subtle {
+  font-size: min(96vh,100vw);
+  font-weight: bold;
+  opacity: 10%;
+  position: absolute;
+  z-index: -1;
+}
+.gone { display: none; }
+
+</style>
+</head>
+
+<body class="ready">
+<div id="action" class="gone action"></div>
+<div class="centered">
+  <span id="touch" class="gone subtle"></span>
+  <h1 id="ref" class="gone"></h1>
+  <button id="btn" onclick="start()">C'est parti !</button>
+</div>
+
+<script>
+  const logging = false;
+  const info = (msg) => { if (logging) { console.info(msg); } }
+
+  const tick = 125; // ms
+  const timer = {
+    'starting': () => get_fuzzy_limit(tick*32),
+    'command': () => get_fuzzy_limit(tick*12),
+    'surprise': () => Math.random() < 0.4 ? get_fuzzy_limit(tick*4, tick*3) : get_fuzzy_limit(tick*16, tick*12),
+    'action': () => get_fuzzy_limit(tick*40),
+  };
+  const commands = ['En garde !', 'Prêts ?', 'Allez !'];
+  const actions = [
+    'retreat', 'prep', 'advance', // first three in sequence, rest establish propertions
+    'prep', 'prep', 'prep', 'prep', 'prep',
+    'advance', 'advance', 'advance', 'advance', 'advance', 'advance',
+  ];
+  let command_index = 0;
+  let duration = 0;
+  let count = 0;
+  let state = 'ready'; // ready, starting, command, surprise, action --> starting
+
+
+  function start() {
+    info('start button onclick');
+    set_vis('btn', false);
+    count = 0;
+    set_touch(count);
+    set_vis('touch', true);
+    state = 'starting';
+    setTimeout(update, timer[state]);
+  }
+
+  function update() {
+    info(`update() state is: ${state}`);
+    let t_factor = 1.0;
+    switch (state) {
+    case 'starting':
+      info('initialized. transitioning to command state');
+      command_index = 0;
+      set_command(command_index);
+      set_vis('ref', true);
+      state = 'command';
+      break;
+    case 'command':
+      ++command_index;
+      info(`command_index: ${command_index}`);
+      if (command_index < commands.length) {
+        info('commands remain, show next');
+        set_command(command_index);
+        if (command_index+1 == commands.length) {
+          t_factor = 0.4;
+          info('last command, go quicker');
+        }
+      }
+      else {
+        info('last command shown. transition to surprise state');
+        set_vis('touch', false);
+        set_vis('ref', false);
+        state = 'surprise';
+      }
+      break;
+    case 'surprise':
+      info('timer expired, transition to action state');
+      let action = get_action(duration);
+      let isShort = get_depthIsShort(action);
+      info(`setting action to ${action}, isShort? ${isShort}`);
+      set_action(action, isShort);
+      state = 'action';
+      break;
+    case 'action':
+      info('action is over. let\'s go again');
+      set_action('ready');
+      count = next_count(count, 1);
+      info(`setting touch to ${count}`);
+      set_touch(count);
+      set_vis('touch', true);
+      state = 'starting';
+      break;
+    }
+    duration = Math.round(timer[state]()*t_factor);
+    info(`ready to set timeout for ${state} ms: ${duration}, t_factor: ${t_factor}`);
+    setTimeout(update, duration);
+  }
+
+  function get_fuzzy_limit(limit, range=0, factor=0.1) {
+    const fuzz = (n) => (Math.random()*2 - 1) * (n*factor) + n;
+    return Math.round(fuzz(limit-range) + Math.random()*range);
+  }
+
+  function get_action(ms) {
+    const action = (n) => actions[Math.floor(Math.random()*n)];
+    if (ms < 400) { return action(0); }
+    if (ms < 600) { return action(1); }
+    return action(actions.length);
+  }
+
+  function get_depthIsShort(action) {
+    const toss = (t=0.5) => (Math.random() < t);
+    if (action == actions[0] || action == actions[2]) { return toss(); }
+    return false;
+  }
+
+  function set_vis(id, isVisible) {
+    let el = document.getElementById(id);
+    if (isVisible) { el.classList.remove('gone'); }
+    else { el.classList.add('gone'); }
+    // document.getElementById(id).style.visibility = isVisible ? 'visible' : 'hidden';
+  }
+
+  function set_command(index) {
+    document.getElementById('ref').innerHTML = commands[index];
+  }
+
+  function set_action(action, isShort=false) {
+    let el = document.getElementById('action')
+    el.setAttribute("class", ""); // remove all class names
+    el.classList.add('action', action, (isShort ? 'short' : 'long'));
+  }
+
+  function set_touch(n) {
+    document.getElementById('touch').innerHTML = n;
+  }
+
+  function next_count(n, digits=2) {
+    return (n+1) % Math.pow(10,digits);
+  }
+
+  function next_stage() {
+    n = (n+1) % stage.length;
+  }
+</script>
+</body>
+</html>
