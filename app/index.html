@@ -85,7 +85,7 @@ h1 {
   const timer = {
     'starting': () => get_fuzzy_limit(tick*32),
     'command': () => get_fuzzy_limit(tick*12),
-    'surprise': () => Math.random() < 0.4 ? get_fuzzy_limit(tick*4, tick*3) : get_fuzzy_limit(tick*16, tick*12),
+    'surprise': () => Math.random() < 0.4 ? get_fuzzy_limit(tick*2, tick*1) : get_fuzzy_limit(tick*8, tick*6),
     'action': () => get_fuzzy_limit(tick*40),
   };
   const commands = ['En garde !', 'Prêts ?', 'Allez !'];
