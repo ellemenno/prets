@@ -57,14 +57,27 @@ h1 {
   height: 100vh;
   justify-content: center;
 }
+.gone { display: none; }
 .subtle {
+  opacity: 10%;
+}
+.underlay {
   font-size: min(96vh,100vw);
   font-weight: bold;
-  opacity: 10%;
   position: absolute;
   z-index: -1;
 }
-.gone { display: none; }
+.version {
+  bottom: 1vh;
+  font-family: Georgia, serif;
+  font-size: max(1.75vh,2.5vw);
+  position: absolute;
+  right: 1vh;
+}
+.version a {
+  color: inherit;
+  text-decoration: none;
+}
 
 </style>
 </head>
@@ -72,10 +85,11 @@ h1 {
 <body class="ready">
 <div id="action" class="gone action"></div>
 <div class="centered">
-  <span id="touch" class="gone subtle"></span>
+  <span id="touch" class="gone subtle underlay"></span>
   <h1 id="ref" class="gone"></h1>
   <button id="btn" onclick="start()">C'est parti !</button>
 </div>
+<span class="subtle version"><a href="https://github.com/ellemenno/prets/deployments">v003</a></span>
 
 <script>
   const logging = false;
