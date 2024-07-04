@@ -8,10 +8,10 @@ fencing timing trainer
 
 ## development
 
-to collect the sites files for viewing and eventual publishing:
+to collect and serve the site files for testing via [localhost]:
 
 ```console
-$ ./run.sh dist`
+$ ./run.sh serve`
 ```
 
 ## publishing
@@ -27,12 +27,13 @@ to set up for publishing:
    - _(replace `uuu` and `ttt` with your username and personal access token)_
    - _`.env` should be kept out of source control to protect your secrets_
 1. run the publish task
-   - `./run.sh deploy`
+   - `./run.sh publish`
 
 
 
 [gh-pages]: https://github.com/ellemenno/vbstats/tree/gh-pages "branch for GitHub Pages auto-deployments"
 [git worktree]: https://git-scm.com/docs/git-worktree "git command to manage multiple working trees"
+[localhost]: http://localhost:8080/ "local testing url"
 [pat]: https://github.com/settings/personal-access-tokens/new "GitHub personal access tokens"
 [pat howto]: https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token "creating a personal access token"
 [X1011]: https://github.com/X1011/git-directory-deploy "method for deploying a sub-directory of build files"
