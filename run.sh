@@ -43,11 +43,15 @@ usage:
 
 options:
   -h --help   show this usage info
-  <service>   dist, publish
+  <service>   clean, dist, publish, serve
 
 EOM
 }
 
+
+function do_clean() {
+  [[ -d dist ]] && rm -r dist # delete the whole dist dir
+}
 
 function do_dist() {
   [[ -d dist ]] || mkdir dist # if no dist dir, create one
@@ -55,9 +59,26 @@ function do_dist() {
   cp -a app/* dist/ # copy app files, recursively without following links, into dist
 }
 
-
 function do_publish() {
   ./scripts/deploy --config ./scripts/deploy.config --message 'deploy site'
+}
+
+function do_serve() {
+  local -r filename='dist/index.html'
+  local -r port=8080
+  # the user will need to ctrl_c to exit, so capture that and say goodbye
+  trap done_serving INT
+  # send a simple http header and the file contents to specified port
+  while true; do { \
+    echo -ne "HTTP/1.0 200 OK\r\nContent-Length: $(wc -c <"$filename")\r\n\r\n"; \
+    cat "$filename"; } | nc -l -p $port ; \
+  done
+}
+
+function done_serving() {
+  msg "\n"
+  note "web server halted."
+  exit 0
 }
 
 
@@ -78,7 +99,7 @@ do
       usage 1 && exit 0 # usage explicitly requested as output, send to stdout ( &1 )
       ;;
 
-    dist|publish)
+    clean|dist|publish|serve)
       SERVICE="$opt"
       shift # past value
       ;;
@@ -92,6 +113,11 @@ do
 done
 
 case $SERVICE in
+  clean)
+    note "removing the dist directory.."
+    do_clean
+    ;;
+
   dist)
     note "populating the dist directory.."
     do_dist
@@ -99,7 +125,16 @@ case $SERVICE in
 
   publish)
     note "pushing files to github.."
+    do_dist
     do_publish
+    ;;
+
+  serve)
+    note "populating the dist directory.."
+    do_dist
+    note "serving site from localhost (CTRL-C to exit)"
+    info "http://localhost:8080/"
+    do_serve
     ;;
 
   *)    # unmatched option
