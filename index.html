@@ -78,7 +78,6 @@ h1 {
   color: inherit;
   text-decoration: none;
 }
-
 </style>
 </head>
 
@@ -89,30 +88,28 @@ h1 {
   <h1 id="ref" class="gone"></h1>
   <button id="btn" onclick="start()">C'est parti !</button>
 </div>
-<span class="subtle version"><a href="https://github.com/ellemenno/prets/deployments">v003</a></span>
+<span class="subtle version"><a href="https://github.com/ellemenno/prets/deployments">v004</a></span>
 
 <script>
   const logging = false;
   const info = (msg) => { if (logging) { console.info(msg); } }
-
-  const tick = 125; // ms
-  const timer = {
-    'starting': () => get_fuzzy_limit(tick*32),
-    'command': () => get_fuzzy_limit(tick*12),
-    'surprise': () => Math.random() < 0.4 ? get_fuzzy_limit(tick*2, tick*1) : get_fuzzy_limit(tick*8, tick*6),
-    'action': () => get_fuzzy_limit(tick*40),
-  };
+  const tick = 63; // ms
+  const fast = tick*2;
+  const slow = tick*8;
+  const timer = ({
+    'starting': () => get_fuzzy_limit(tick*48),
+    'command': () => get_fuzzy_limit(tick*18),
+    'surprise': () => Math.random() < 0.4 ? get_fuzzy_limit(fast, Math.round(fast/2)) : get_fuzzy_limit(slow, slow-fast),
+    'action': () => get_fuzzy_limit(tick*60),
+  });
   const commands = ['En garde !', 'Prêts ?', 'Allez !'];
-  const actions = [
-    'retreat', 'prep', 'advance', // first three in sequence, rest establish propertions
-    'prep', 'prep', 'prep', 'prep', 'prep',
-    'advance', 'advance', 'advance', 'advance', 'advance', 'advance',
-  ];
+  const actions = ['retreat', 'prep', 'advance'];
+  const get_action = () => actions[Math.floor(Math.random()*actions.length)];
+
   let command_index = 0;
   let duration = 0;
   let count = 0;
   let state = 'ready'; // ready, starting, command, surprise, action --> starting
-
 
   function start() {
     info('start button onclick');
@@ -155,7 +152,7 @@ h1 {
       break;
     case 'surprise':
       info('timer expired, transition to action state');
-      let action = get_action(duration);
+      let action = get_action();
       let isShort = get_depthIsShort(action);
       info(`setting action to ${action}, isShort? ${isShort}`);
       set_action(action, isShort);
@@ -181,13 +178,6 @@ h1 {
     return Math.round(fuzz(limit-range) + Math.random()*range);
   }
 
-  function get_action(ms) {
-    const action = (n) => actions[Math.floor(Math.random()*n)];
-    if (ms < 400) { return action(0); }
-    if (ms < 600) { return action(1); }
-    return action(actions.length);
-  }
-
   function get_depthIsShort(action) {
     const toss = (t=0.5) => (Math.random() < t);
     if (action == actions[0] || action == actions[2]) { return toss(); }
@@ -198,7 +188,6 @@ h1 {
     let el = document.getElementById(id);
     if (isVisible) { el.classList.remove('gone'); }
     else { el.classList.add('gone'); }
-    // document.getElementById(id).style.visibility = isVisible ? 'visible' : 'hidden';
   }
 
   function set_command(index) {
