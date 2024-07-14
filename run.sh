@@ -6,7 +6,7 @@ function out() { printf "%s\n" "$*" >&1; } # stdout for output to be consumed by
 function msg() { printf "%b" "$*" >&2; } # stderr for messaging to be read by users; may use color if [ -t 2 ] is true; BYONL (newlines not supplied here)
 
 function log() {
-  local -r hue="$1" # e.g. 32m for plain (dim) green, 91m for bold (bright) red
+  local -r hue="$1" # text color, e.g. 32m for plain (dim) green, 91m for bold (bright) red
   local -r label="$2" # when not printing color (i.e. not a terminal), label will be added for differentiation
   shift; shift
   local pre="$(basename "$0"):"
@@ -43,7 +43,7 @@ usage:
 
 options:
   -h --help   show this usage info
-  <service>   clean, dist, publish, serve
+  <service>   clean, dist (vbump), publish, serve
 
 EOM
 }
@@ -57,13 +57,47 @@ function do_dist() {
   [[ -d dist ]] || mkdir dist # if no dist dir, create one
   [ "$(ls -A dist)" ] && rm -r dist/* # if not empty, remove files
   cp -a app/* dist/ # copy app files, recursively without following links, into dist
+  do_version_bump
+}
+
+function do_version_bump() {
+  local -r src='app/index.html'
+  local -r dst='dist/index.html'
+  export VER="$(get_version)" # export an envar for app version
+  envsubst '$VER' <"$src" >"$dst" # read src, substitute VER, and write to dest
+}
+
+function get_version() {
+  # version is the current deployment count plus one, padded to three digits
+  local -r n=$(get_deployment_count)
+  printf "%03d\n" "$((n + 1))"
+}
+
+function get_deployment_count() {
+  # source the vars defined in .env (keep out of source control!), to get $QUERY_TOKEN
+  if [ -e ".env" ]; then
+    source .env
+  fi
+  # query the github graphql api for total deployments, and extract value from json reponse with jq
+  # echo '{"data":{"repository":{"deployments":{"totalCount":4}}}}' | jq .data.repository.deployments.totalCount
+  local -r owner='ellemenno'
+  local -r name='prets'
+  curl --location https://api.github.com/graphql \
+  --silent --show-error --fail \
+  --header "Authorization: bearer $QUERY_TOKEN" \
+  --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"query": "query { repository(owner:\"'"$owner"'\", name:\"'"$name"'\") { deployments { totalCount } } }"}' \
+  | jq .data.repository.deployments.totalCount
 }
 
 function do_publish() {
+  # run the script to push the site to gh-pages branch which triggers deployment action
   ./scripts/deploy --config ./scripts/deploy.config --message 'deploy site'
 }
 
 function do_serve() {
+  # start a ridiculously basic web serve the static site
   local -r filename='dist/index.html'
   local -r port=8080
   # the user will need to ctrl_c to exit, so capture that and say goodbye
@@ -99,7 +133,7 @@ do
       usage 1 && exit 0 # usage explicitly requested as output, send to stdout ( &1 )
       ;;
 
-    clean|dist|publish|serve)
+    clean|vbump|dist|publish|serve)
       SERVICE="$opt"
       shift # past value
       ;;
@@ -116,6 +150,11 @@ case $SERVICE in
   clean)
     note "removing the dist directory.."
     do_clean
+    ;;
+
+  vbump)
+    note "updating the app version.."
+    do_version_bump
     ;;
 
   dist)

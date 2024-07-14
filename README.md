@@ -23,8 +23,9 @@ to set up for publishing:
    - _Repository access | Only select repositories_
    - _Contents: Reand and Write_
 1. add an untracked config file to this repo (`.env`):
-   - `$ printf "DEPLOY_USER=uuu\nDEPLOY_TOKEN=ttt" > .env`
+   - `$ printf "DEPLOY_USER=uuu\nDEPLOY_TOKEN=ttt\nQUERY_TOKEN=$DEPLOY_TOKEN" > .env`
    - _(replace `uuu` and `ttt` with your username and personal access token)_
+   - _note `QUERY_TOKEN` could also be a different PAT; it only needs "Deployments" repository permissions (read)_
    - _`.env` should be kept out of source control to protect your secrets_
 1. run the publish task
    - `./run.sh publish`
