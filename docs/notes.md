@@ -46,4 +46,54 @@ https://docs.github.com/en/rest/metrics/statistics?apiVersion=2022-11-28
 
 so, looking to graphQL api instead:
 https://docs.github.com/en/graphql
+https://docs.github.com/en/graphql/overview/explorer
 
+..easy!
+
+query
+```graphql
+{
+  repository(owner: "ellemenno", name: "prets") {
+    deployments {
+      totalCount
+    }
+  }
+}
+```
+
+response
+```json
+{
+  "data": {
+    "repository": {
+      "deployments": {
+        "totalCount": 4
+      }
+    }
+  }
+}
+```
+
+
+https://docs.github.com/en/graphql/guides/forming-calls-with-graphql#communicating-with-graphql
+
+REQ:
+
+    curl --location https://api.github.com/graphql \
+    --header "Authorization: bearer ${TOKEN}" \
+    --header "Content-Type: application/json" \
+    --request POST \
+    --data '{"query": "query { repository(owner:\"ellemenno\", name:\"prets\") { deployments { totalCount } } }"}'
+
+RESPONSE:
+
+    {"data":{"repository":{"deployments":{"totalCount":4}}}}
+
+
+curl --location https://api.github.com/graphql \
+--header "Authorization: bearer ${TOKEN}" \
+--header "Content-Type: application/json" \
+--request POST \
+--data '{"query": "query { repository(owner:\"ellemenno\", name:\"prets\") { deployments { totalCount } } }"}'
+
+curl --location https://api.github.com/graphql --header "Authorization: bearer ${TOKEN}" --header "Content-Type: application/json" --request POST --data '{"query": "query { repository(owner:\"ellemenno\", name:\"prets\") { deployments { totalCount } } }"}' | jq .data.repository.deployments.totalCount
